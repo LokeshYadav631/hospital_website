@@ -15,6 +15,7 @@ function getApp() {
     const { open, migrate } = require('../src/lib/db');
     const { seed } = require('../src/data/seed');
     const { seedVerifiedDoctors } = require('../src/data/verified-doctors');
+    const { seedAdmin } = require('../src/data/seed-admin');
     const { createApp } = require('../src/web/app');
 
     const tempDb = path.join(os.tmpdir(), 'hospital.db');
@@ -25,11 +26,13 @@ function getApp() {
       migrate(db);
       seed(db);
       seedVerifiedDoctors(db);
+      seedAdmin(db);
     } catch (dbErr) {
       db = open(tempDb);
       migrate(db);
       seed(db);
       seedVerifiedDoctors(db);
+      seedAdmin(db);
     }
 
     appInstance = createApp(db);

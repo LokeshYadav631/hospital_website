@@ -3,6 +3,7 @@ const config = require('./lib/config');
 const { open, migrate } = require('./lib/db');
 const { seed } = require('./data/seed');
 const { seedVerifiedDoctors } = require('./data/verified-doctors');
+const { seedAdmin } = require('./data/seed-admin');
 const { createApp } = require('./web/app');
 const { getProvider } = require('./services/sms-providers');
 const { getProvider: getEmailProvider } = require('./services/email-providers');
@@ -12,6 +13,7 @@ const applied = migrate(db);
 seed(db);
 if (process.env.NODE_ENV !== 'test') {
   seedVerifiedDoctors(db);
+  seedAdmin(db);
 }
 if (applied.length) console.log('Applied migrations:', applied.join(', '));
 
