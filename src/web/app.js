@@ -69,6 +69,7 @@ function createApp(db) {
     timers.push(setInterval(() => { try { db.prepare("DELETE FROM sessions WHERE expires_at < ?").run(new Date().toISOString()); } catch { /* ignore */ } }, 3600e3).unref());
   };
   server.stopBackground = () => { timers.forEach(clearInterval); timers = []; };
+  server.handle = handle;
   return server;
 }
 module.exports = { createApp };

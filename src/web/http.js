@@ -56,8 +56,13 @@ function parseBody(raw, type) {
   return out;
 }
 const clientIp = (req) => {
-  if (config.trustProxy) { const f = req.headers['x-forwarded-for']; if (f) return String(f).split(',')[0].trim(); }
-  return req.socket.remoteAddress || '0.0.0.0';
+  if (config.trustProxy || process.env.VERCEL) {
+    const f = req.headers && (req.headers['x-forwarded-for'] || req.headers['x-real-ip']);
+    if (f) return String(f).split(',')[0].trim();
+  }
+  if (req.socket && req.socket.remoteAddress) return req.socket.remoteAddress;
+  if (req.connection && req.connection.remoteAddress) return req.connection.remoteAddress;
+  return '127.0.0.1';
 };
 
 function buildCtx(db, req, res) {

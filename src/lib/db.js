@@ -16,17 +16,37 @@ function migrate(db) {
   const dir = path.join(__dirname, '..', 'migrations');
   const done = new Set(db.prepare('SELECT name FROM schema_migrations').all().map((r) => r.name));
   const applied = [];
-  for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.sql')).sort()) {
-    if (done.has(f)) continue;
+
+  let list = [];
+  if (fs.existsSync(dir)) {
+    try {
+      list = fs.readdirSync(dir).filter((x) => x.endsWith('.sql')).sort().map((f) => ({
+        name: f,
+        sql: fs.readFileSync(path.join(dir, f), 'utf8')
+      }));
+    } catch {
+      // fallback to bundled below
+    }
+  }
+  if (!list.length) {
+    try {
+      list = require('../migrations/bundled');
+    } catch {
+      // ignore
+    }
+  }
+
+  for (const item of list) {
+    if (done.has(item.name)) continue;
     db.exec('BEGIN');
     try {
-      db.exec(fs.readFileSync(path.join(dir, f), 'utf8'));
-      db.prepare('INSERT INTO schema_migrations(name) VALUES (?)').run(f);
+      db.exec(item.sql);
+      db.prepare('INSERT INTO schema_migrations(name) VALUES (?)').run(item.name);
       db.exec('COMMIT');
-      applied.push(f);
+      applied.push(item.name);
     } catch (e) {
       db.exec('ROLLBACK');
-      throw new Error(`Migration ${f} failed: ${e.message}`);
+      throw new Error(`Migration ${item.name} failed: ${e.message}`);
     }
   }
   return applied;
