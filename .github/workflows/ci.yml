@@ -1,0 +1,57 @@
+name: CI/CD Automated Test & Quality Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Node.js Automated Test Suite
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x, 24.x]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Verify zero external dependency integrity
+        run: |
+          node -e "const pkg = require('./package.json'); if (Object.keys(pkg.dependencies || {}).length > 0) throw new Error('Unexpected dependencies');"
+
+      - name: Verify database migrations
+        run: node scripts/migrate.js
+        env:
+          DATABASE_PATH: ./data/test-ci.db
+
+      - name: Run automated test suite (68 Tests)
+        run: npm run test
+        env:
+          NODE_ENV: test
+          SESSION_SECRET: ci-test-secret-must-be-at-least-32-chars-long-12345
+          DATABASE_PATH: ':memory:'
+
+  docker:
+    name: Docker Container Build Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: sachkhand-hospital:latest

@@ -1,0 +1,32 @@
+# Render Blueprint Specification for SACHKHAND HOSPITAL
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: sachkhand-hospital
+    runtime: node
+    plan: starter # Starter plan includes persistent disk support; free tier available for stateless demo
+    region: singapore
+    buildCommand: npm ci --omit=dev && node scripts/migrate.js
+    startCommand: node --disable-warning=ExperimentalWarning src/server.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: TRUST_PROXY
+        value: "1"
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_PATH
+        value: /var/data/hospital.db
+      - key: SMS_PROVIDER
+        value: none
+      - key: EMAIL_PROVIDER
+        value: none
+    disk:
+      name: hospital-data
+      mountPath: /var/data
+      sizeGB: 1

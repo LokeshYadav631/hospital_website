@@ -43,6 +43,7 @@ const config = {
   dbPath: path.resolve(ROOT, env.DATABASE_PATH || './data/hospital.db'),
   secret,
   trustProxy: env.TRUST_PROXY === '1',
+  allowedOrigins: (env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean),
   cookieSecure: production || (env.BASE_URL || '').startsWith('https://'),
   sms: {
     provider: (env.SMS_PROVIDER || 'none').toLowerCase(),

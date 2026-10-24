@@ -25,4 +25,12 @@ server.listen(config.port, () => {
   if (!n) console.log('No admin user yet. Run:  npm run create-admin');
 });
 const stop = () => { server.stopBackground(); server.close(() => { db.close(); process.exit(0); }); setTimeout(() => process.exit(0), 3000).unref(); };
-process.on('SIGINT', stop); process.on('SIGTERM', stop);
+process.on('SIGINT', stop);
+process.on('SIGTERM', stop);
+process.on('unhandledRejection', (reason) => {
+  console.error('[Process] Unhandled Promise Rejection:', reason && reason.message ? reason.message : reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[Process] Uncaught Exception:', err && err.message ? err.message : err);
+  stop();
+});

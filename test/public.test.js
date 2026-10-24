@@ -151,3 +151,14 @@ test('verified doctors ordered with Dr. Gajraj Yadav first and poster removed', 
   H.run(app.db, 'DELETE FROM doctor_schedules');
   H.run(app.db, 'DELETE FROM doctors');
 });
+
+test('health endpoints respond with healthy status', async () => {
+  const h1 = await c.get('/health');
+  assert.equal(h1.status, 200);
+  assert.equal(JSON.parse(h1.text).ok, true);
+  assert.equal(JSON.parse(h1.text).status, 'healthy');
+
+  const h2 = await c.get('/healthz');
+  assert.equal(h2.status, 200);
+  assert.equal(JSON.parse(h2.text).ok, true);
+});

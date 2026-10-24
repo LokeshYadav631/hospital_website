@@ -19,6 +19,20 @@ function createApp(db) {
     let ctx;
     try {
       ctx = buildCtx(db, req, res);
+      const origin = req.headers.origin;
+      if (origin && config.allowedOrigins.length) {
+        if (config.allowedOrigins.includes('*') || config.allowedOrigins.includes(origin)) {
+          ctx.extraHeaders['Access-Control-Allow-Origin'] = origin;
+          ctx.extraHeaders['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
+          ctx.extraHeaders['Access-Control-Allow-Headers'] = 'Content-Type, X-CSRF-Token, Authorization';
+          ctx.extraHeaders['Access-Control-Allow-Credentials'] = 'true';
+        }
+      }
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, ctx.extraHeaders);
+        res.end();
+        return;
+      }
       const pathname = ctx.url.pathname;
       if (pathname.startsWith('/static/')) { if (serveStatic(ctx, pathname)) return; return ctx.send(404, 'Not found', 'text/plain'); }
       const m = router.match(req.method === 'HEAD' ? 'GET' : req.method, pathname);
