@@ -1,6 +1,7 @@
 'use strict';
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 let appInstance = null;
 let initError = null;
@@ -16,27 +17,19 @@ function getApp() {
     const { seedVerifiedDoctors } = require('../src/data/verified-doctors');
     const { createApp } = require('../src/web/app');
 
+    const tempDb = path.join(os.tmpdir(), 'hospital.db');
     let db;
-    // On serverless Vercel / AWS Lambda, use /tmp for writeable SQLite database
-    const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
-    const dbPath = isServerless ? path.join('/tmp', 'hospital.db') : config.dbPath;
 
     try {
-      db = open(dbPath);
+      db = open(config.dbPath);
       migrate(db);
       seed(db);
       seedVerifiedDoctors(db);
     } catch (dbErr) {
-      // In case opening at target failed, fallback to /tmp/hospital.db
-      if (dbPath !== path.join('/tmp', 'hospital.db')) {
-        const fallbackPath = path.join('/tmp', 'hospital.db');
-        db = open(fallbackPath);
-        migrate(db);
-        seed(db);
-        seedVerifiedDoctors(db);
-      } else {
-        throw dbErr;
-      }
+      db = open(tempDb);
+      migrate(db);
+      seed(db);
+      seedVerifiedDoctors(db);
     }
 
     appInstance = createApp(db);

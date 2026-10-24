@@ -1,13 +1,33 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { DatabaseSync } = require('node:sqlite');
 
 function open(file) {
-  if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true });
-  const db = new DatabaseSync(file);
+  let targetFile = file;
+  if (targetFile !== ':memory:') {
+    try {
+      fs.mkdirSync(path.dirname(targetFile), { recursive: true });
+    } catch {
+      // If filesystem is read-only (e.g. /var/task on Vercel), fallback to os.tmpdir()
+      targetFile = path.join(os.tmpdir(), 'hospital.db');
+      try { fs.mkdirSync(path.dirname(targetFile), { recursive: true }); } catch { /* ignore */ }
+    }
+  }
+  let db;
+  try {
+    db = new DatabaseSync(targetFile);
+  } catch (err) {
+    if (targetFile !== ':memory:' && !targetFile.startsWith(os.tmpdir())) {
+      targetFile = path.join(os.tmpdir(), 'hospital.db');
+      db = new DatabaseSync(targetFile);
+    } else {
+      throw err;
+    }
+  }
   db.exec('PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
-  if (file !== ':memory:') db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;');
+  if (targetFile !== ':memory:') db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;');
   return db;
 }
 

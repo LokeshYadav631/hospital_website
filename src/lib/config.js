@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const os = require('os');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 
@@ -35,12 +36,15 @@ if (production && secret.length < 32) {
   process.exit(1);
 }
 
+const isServerless = Boolean(env.VERCEL || env.AWS_LAMBDA_FUNCTION_NAME);
+
 const config = {
   ROOT,
+  isServerless,
   production,
   port: Number(env.PORT || 3000),
   baseUrl: (env.BASE_URL || `http://localhost:${env.PORT || 3000}`).replace(/\/$/, ''),
-  dbPath: path.resolve(ROOT, env.DATABASE_PATH || './data/hospital.db'),
+  dbPath: env.DATABASE_PATH ? path.resolve(ROOT, env.DATABASE_PATH) : (isServerless ? path.join(os.tmpdir(), 'hospital.db') : path.resolve(ROOT, './data/hospital.db')),
   secret,
   trustProxy: env.TRUST_PROXY === '1',
   allowedOrigins: (env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean),
