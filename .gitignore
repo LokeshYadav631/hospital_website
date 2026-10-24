@@ -1,10 +1,10 @@
 node_modules/
 .env
-data/
+/data/
 *.db
 *.db-wal
 *.db-shm
-backups/
+/backups/
 venv/
 coursevault/
 .DS_Store
