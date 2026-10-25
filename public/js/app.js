@@ -1,11 +1,39 @@
 (function () {
   'use strict';
   document.documentElement.classList.add('js');
-  // Mobile menu
+  // Mobile menu with outside-click & escape key dismissal
   var btn = document.querySelector('.menu-btn'), nav = document.getElementById('site-nav');
-  if (btn && nav) btn.addEventListener('click', function () {
-    var open = nav.classList.toggle('open'); btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
+  if (btn && nav) {
+    var toggleMenu = function (state) {
+      var shouldOpen = typeof state === 'boolean' ? state : !nav.classList.contains('open');
+      if (shouldOpen) {
+        nav.classList.add('open');
+      } else {
+        nav.classList.remove('open');
+      }
+      btn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+    };
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      toggleMenu();
+    });
+    document.addEventListener('click', function (e) {
+      if (nav.classList.contains('open') && !nav.contains(e.target) && e.target !== btn) {
+        toggleMenu(false);
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && nav.classList.contains('open')) {
+        toggleMenu(false);
+        btn.focus();
+      }
+    });
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 960 && nav.classList.contains('open')) {
+        toggleMenu(false);
+      }
+    });
+  }
   // Remember language choice
   document.querySelectorAll('a[data-lang]').forEach(function (a) {
     a.addEventListener('click', function () { document.cookie = 'lang=' + a.dataset.lang + '; Path=/; Max-Age=31536000; SameSite=Lax'; });
