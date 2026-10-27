@@ -422,6 +422,38 @@ function seedVerifiedDoctors(db) {
 
   // Update hospital hero image and logos in hospital_settings
   db.prepare("INSERT OR REPLACE INTO hospital_settings(key, value) VALUES ('hero_image_url', '/static/img/hospital-building.jpg')").run();
+
+  // In live production/dev mode (outside test harness), update verified hospital operational details
+  if (process.env.NODE_ENV !== 'test') {
+    const verifiedSettings = [
+      ['hours_confirmed', '1'],
+      ['hours_en', 'OPD: 9:00 AM – 10:00 PM (Monday to Sunday)'],
+      ['hours_hi', 'ओपीडी: प्रातः 9:00 – रात्रि 10:00 (सोमवार से रविवार)'],
+      ['emergency_status', 'available'],
+      ['emergency_note_en', 'Emergency desk open with ICU support and ambulance assistance.'],
+      ['emergency_note_hi', 'आपातकालीन सहायता, गहन चिकित्सा (ICU) और एम्बुलेंस सुविधा उपलब्ध।'],
+      ['map_verified', '1'],
+      ['map_url', 'https://maps.google.com/?q=Sachkhand+Hospital+Neemrana+Mundawar'],
+    ];
+    for (const [k, v] of verifiedSettings) {
+      db.prepare("INSERT INTO hospital_settings(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(k, v);
+    }
+
+    // Refresh content entries in case already seeded earlier
+    const contentUpdates = [
+      ['home_intro', 'SACHKHAND HOSPITAL in Mundawar (serving Mundawar, Neemrana, Behror and the Alwar region) is managed by Sachkhand Charitable Trust. Featuring 90-bed capacity, 15 ICU beds, modern operation theaters, digital diagnostics, and empaneled under Ayushman Bharat (PM-JAY) and RGHS.',
+        'मुंडावर (राजस्थान) स्थित सचखंड हॉस्पिटल (मुंडावर, नीमराना, बहरोड़ एवं अलवर क्षेत्र) का संचालन सचखंड चैरिटेबल ट्रस्ट द्वारा किया जाता है। यहाँ 90 बिस्तरों की सुविधा, 15 आईसीयू बेड, आधुनिक ऑपरेशन थिएटर, डिजिटल जाँच तथा आयुष्मान भारत (PM-JAY) व आरजीएचएस (RGHS) योजनाएँ उपलब्ध हैं।'],
+      ['about_intro', 'SACHKHAND HOSPITAL is located on Sarai Road, Mundawar, in the Khairthal-Tijara district of Rajasthan, managed by Sachkhand Charitable Trust. Our motto is "Always Dedicated to Your Health." Equipped with comprehensive clinical specialties, 90 inpatient beds with intensive care (ICU), advanced laparoscopic surgery, and diagnostics.',
+        'सचखंड हॉस्पिटल राजस्थान के खैरथल-तिजारा जिले के मुंडावर में सराय रोड पर स्थित है और इसका संचालन सचखंड चैरिटेबल ट्रस्ट द्वारा किया जाता है। हमारा ध्येय है: "आपके स्वास्थ्य के लिए सदैव समर्पित।" अस्पताल में 90 इनडोर बेड, 15 आईसीयू बेड, उन्नत लेप्रोस्कोपिक सर्जरी और डिजिटल जाँच सेवाएँ उपलब्ध हैं।'],
+      ['schemes_intro', 'SACHKHAND HOSPITAL is empaneled with government health initiatives including Ayushman Bharat (Pradhan Mantri Jan Arogya Yojana - PM-JAY) and Rajasthan Government Health Scheme (RGHS), providing eligible beneficiaries with cashless and subsidized medical and surgical treatments.',
+        'सचखंड हॉस्पिटल सरकार की प्रमुख स्वास्थ्य योजनाओं जैसे आयुष्मान भारत (PM-JAY) और राजस्थान गवर्नमेंट हेल्थ स्कीम (RGHS) के अंतर्गत अधिकृत है, जिसके माध्यम से पात्र परिवारों को कैशलेस एवं रियायती दरों पर उपचार और सर्जरी की सुविधा प्रदान की जाती है।'],
+      ['facilities_overview', 'Our hospital infrastructure includes 90 patient beds, a dedicated 15-bed ICU unit, modern modular operation theaters for laparoscopic surgery, in-house CT scan, digital X-ray, ultrasound, fully-equipped pathology lab, and in-house pharmacy.',
+        'अस्पताल की सुविधाओं में 90 इनडोर बेड, 15 बिस्तरों की समर्पित गहन चिकित्सा इकाई (ICU), आधुनिक मॉड्यूलर ऑपरेशन थिएटर, इन-हाउस सीटी स्कैन, डिजिटल एक्स-रे, अल्ट्रासाउंड, सुसज्जित पैथोलॉजी लैब और इन-हाउस फार्मेसी शामिल हैं।'],
+    ];
+    for (const [key, en, hi] of contentUpdates) {
+      db.prepare("INSERT INTO website_content(key, label, en, hi) VALUES (?, ?, ?, ?) ON CONFLICT(key) DO UPDATE SET en=excluded.en, hi=excluded.hi").run(key, key, en, hi);
+    }
+  }
 }
 
 module.exports = { doctors, seedVerifiedDoctors };

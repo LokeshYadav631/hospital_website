@@ -235,6 +235,34 @@ function home(ctx) {
   const db = ctx.db, s = ctx.settings;
   const depts = departments(db), facilities = depts.filter((d) => d.is_facility);
   const docs = publishedDoctors(db);
+  const highlightsBand = html`
+  <section class="block" style="background:#f8fafc;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:24px 0">
+    <div class="wrap">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:16px;text-align:center">
+        <div class="card" style="padding:16px;background:#fff;border-radius:8px">
+          <div style="font-size:1.8rem;margin-bottom:6px">🏛️</div>
+          <strong style="color:var(--navy);display:block;font-size:1rem;margin-bottom:4px">${ctx.bi('Ayushman & RGHS', 'आयुष्मान एवं RGHS')}</strong>
+          <small style="color:var(--muted)">${ctx.bi('Empaneled for Cashless Treatment', 'कैशलेस स्वास्थ्य योजनाओं हेतु अधिकृत')}</small>
+        </div>
+        <div class="card" style="padding:16px;background:#fff;border-radius:8px">
+          <div style="font-size:1.8rem;margin-bottom:6px">🛏️</div>
+          <strong style="color:var(--navy);display:block;font-size:1rem;margin-bottom:4px">${ctx.bi('90 Beds & 15 ICU Units', '90 बेड एवं 15 आईसीयू यूनिट')}</strong>
+          <small style="color:var(--muted)">${ctx.bi('Advanced Inpatient & Critical Care', 'आधुनिक इनडोर एवं गहन चिकित्सा')}</small>
+        </div>
+        <div class="card" style="padding:16px;background:#fff;border-radius:8px">
+          <div style="font-size:1.8rem;margin-bottom:6px">🔬</div>
+          <strong style="color:var(--navy);display:block;font-size:1rem;margin-bottom:4px">${ctx.bi('CT Scan & Digital Imaging', 'सीटी स्कैन एवं डिजिटल इमेजिंग')}</strong>
+          <small style="color:var(--muted)">${ctx.bi('In-house Diagnostics & Pathology', 'डिजिटल एक्स-रे एवं पैथोलॉजी लैब')}</small>
+        </div>
+        <div class="card" style="padding:16px;background:#fff;border-radius:8px">
+          <div style="font-size:1.8rem;margin-bottom:6px">🩺</div>
+          <strong style="color:var(--navy);display:block;font-size:1rem;margin-bottom:4px">${ctx.bi('Specialist Surgical Care', 'विशेषज्ञ शल्य चिकित्सा')}</strong>
+          <small style="color:var(--muted)">${ctx.bi('Laparoscopy, Ortho & General Surgery', 'लेप्रोस्कोपी एवं आधुनिक सर्जरी')}</small>
+        </div>
+      </div>
+    </div>
+  </section>`;
+
   const main = html`
   <section class="hero"><div class="wrap hero-grid"><div>
     <h1 lang="${ctx.lang}">${ctx.bi('Your Health, Our Priority.', 'आपका स्वास्थ्य, हमारी प्राथमिकता।')}</h1>
@@ -262,6 +290,7 @@ function home(ctx) {
   </div></div></section>
   <div class="wrap">${U.emergencyBanner(ctx)}</div>
   ${announcementsBlock(ctx)}
+  ${highlightsBand}
   <section class="block"><div class="wrap"><h2 class="sec">${ctx.t('nav_departments')}</h2><p class="lead">${ctx.t('avail_notice')}</p>
     <div class="grid">${depts.map((d) => deptCard(ctx, d))}</div></div></section>
   <section class="block alt"><div class="wrap"><h2 class="sec">${ctx.bi('Request an appointment', 'अपॉइंटमेंट का अनुरोध')}</h2>
@@ -297,6 +326,8 @@ function about(ctx) {
   const main = html`<div class="pagehead"><div class="wrap"><h1>${ctx.t('nav_about')}</h1></div></div>
     ${visualHeader}
     ${sec(s['hospital_name_' + ctx.lang], 'about_intro')}
+    ${sec(ctx.bi('Government health schemes', 'सरकारी स्वास्थ्य योजनाएँ'), 'schemes_intro')}
+    ${sec(ctx.bi('Hospital facilities & infrastructure', 'अस्पताल की सुविधाएँ एवं बुनियादी ढाँचा'), 'facilities_overview')}
     ${sec(ctx.bi('Our mission', 'हमारा उद्देश्य'), 'mission')}${sec(ctx.bi('Our vision', 'हमारी दृष्टि'), 'vision')}${sec(ctx.bi('Patient-care philosophy', 'मरीज़ देखभाल का दृष्टिकोण'), 'philosophy')}
     ${sec(ctx.t('trust'), 'trust_intro')}
     <section class="block alt"><div class="wrap"><h2 class="sec">${ctx.t('facilities')}</h2><ul class="svc-list">${facilities.map((d) => html`<li><a href="/${ctx.lang}/departments/${d.slug}">${L(ctx, d, 'name')}</a>${U.badge(ctx, d.status)}</li>`)}</ul></div></section>
@@ -379,16 +410,122 @@ const diagnosticsPage = (ctx, st) => {
     ${diagForm(ctx, st)}${U.disclaimer(ctx)}</div></section>` });
 };
 
-function successPage(ctx, flash) {
+function appointmentReceiptCard(ctx, appt, { isStandalone = false } = {}) {
+  const db = ctx.db, s = ctx.settings;
+  const dept = appt.department_id ? get(db, 'SELECT * FROM departments WHERE id=?', appt.department_id) : null;
+  const doc = appt.doctor_id ? get(db, 'SELECT * FROM doctors WHERE id=?', appt.doctor_id) : null;
+  const svc = appt.service_id ? get(db, 'SELECT * FROM services WHERE id=?', appt.service_id) : null;
+
+  const deptName = dept ? L(ctx, dept, 'name') : (appt.type === 'diagnostic' ? ctx.t('diag_card') : ctx.t('f_choose'));
+  const docName = doc ? `${L(ctx, doc, 'name')}${L(ctx, doc, 'specialization') ? ' — ' + L(ctx, doc, 'specialization') : ''}` : ctx.bi('Doctor to be assigned by hospital', 'चिकित्सक अस्पताल द्वारा निर्धारित किया जाएगा');
+
+  const rangeLabel = { morning: 'tr_morning', afternoon: 'tr_afternoon', evening: 'tr_evening', any: 'tr_any' };
+  let slotText = '—';
+  if (appt.slot_start) {
+    slotText = `${fmtDate(appt.slot_start.slice(0, 10))} ${appt.slot_start.slice(11)}`;
+  } else if (appt.preferred_date) {
+    slotText = `${fmtDate(appt.preferred_date)} (${ctx.t(rangeLabel[appt.preferred_range] || 'tr_any')})`;
+  }
+
+  const patientTypeStr = appt.patient_type === 'returning' ? ctx.t('pt_returning') : ctx.t('pt_new');
+  const genderStr = appt.gender ? ctx.t('g_' + appt.gender) : '—';
+  const ageStr = appt.age ? `${appt.age} ${ctx.t('years')}` : (appt.dob ? fmtDate(appt.dob) : '—');
+
+  return html`
+  <div class="receipt-slip" id="appointment-receipt">
+    <div class="receipt-header">
+      <div class="receipt-brand">
+        <img src="/static/img/hospital-logo.jpg" alt="${s['hospital_name_' + ctx.lang]}" width="52" height="52" class="receipt-logo">
+        <div>
+          <h2 class="receipt-hname">${s['hospital_name_' + ctx.lang]}</h2>
+          <p class="receipt-tname">${s['trust_name_' + ctx.lang]}</p>
+          <p class="receipt-addr">${s['address_' + ctx.lang]} · ☎ ${s.phone1}</p>
+        </div>
+      </div>
+      <div class="receipt-badge-box">
+        <span class="receipt-badge">${ctx.t('receipt_subtitle')}</span>
+        <div class="receipt-ref-code">${appt.ref}</div>
+        <div class="receipt-date"><small>${ctx.t('receipt_date')}: ${clock.todayIST()}</small></div>
+      </div>
+    </div>
+
+    <div class="receipt-grid">
+      <div class="receipt-col">
+        <h3 class="receipt-sect-title">👤 ${ctx.t('receipt_patient_info')}</h3>
+        <table class="receipt-table">
+          <tr><th>${ctx.t('receipt_patient_name')}:</th><td><strong>${appt.patient_name}</strong></td></tr>
+          <tr><th>${ctx.t('receipt_mobile')}:</th><td>${appt.mobile}</td></tr>
+          ${appt.email ? html`<tr><th>${ctx.t('f_email')}:</th><td>${appt.email}</td></tr>` : ''}
+          <tr><th>${ctx.t('receipt_age_gender')}:</th><td>${ageStr} / ${genderStr}</td></tr>
+          <tr><th>${ctx.t('receipt_type')}:</th><td>${patientTypeStr}</td></tr>
+        </table>
+      </div>
+
+      <div class="receipt-col">
+        <h3 class="receipt-sect-title">🏥 ${ctx.t('receipt_appt_info')}</h3>
+        <table class="receipt-table">
+          <tr><th>${ctx.t('receipt_num')}:</th><td><strong class="ref-mono" style="color:var(--navy)">${appt.ref}</strong></td></tr>
+          <tr><th>${ctx.t('receipt_dept')}:</th><td><strong>${deptName}</strong>${svc ? html` — ${L(ctx, svc, 'name')}` : ''}</td></tr>
+          <tr><th>${ctx.t('receipt_doctor')}:</th><td>${docName}</td></tr>
+          <tr><th>${ctx.t('receipt_slot')}:</th><td><strong>${slotText}</strong></td></tr>
+          <tr><th>${ctx.t('receipt_status')}:</th><td>${U.apptBadge(ctx, appt.status)}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="receipt-instructions">
+      <h4>📋 ${ctx.t('receipt_instructions_title')}</h4>
+      <ol>
+        <li>${ctx.t('receipt_inst_1')}</li>
+        <li>${ctx.t('receipt_inst_2')}</li>
+        <li>${ctx.t('receipt_inst_3')}</li>
+        <li>${ctx.t('receipt_inst_4')}</li>
+      </ol>
+    </div>
+
+    <div class="receipt-footer">
+      <p><em>${ctx.t('receipt_tagline')}</em></p>
+    </div>
+
+    <div class="receipt-actions no-print">
+      <button class="btn btn-primary" type="button" data-print>🖨️ ${ctx.t('receipt_print')}</button>
+      <a class="btn btn-call" href="/${ctx.lang}/appointment/receipt/download?ref=${appt.ref}&mobile=${encodeURIComponent(appt.mobile)}" download="sachkhand-receipt-${appt.ref}.html">⬇️ ${ctx.t('receipt_download')}</a>
+      <a class="btn btn-outline" href="/${ctx.lang}/appointment/receipt/download?ref=${appt.ref}&mobile=${encodeURIComponent(appt.mobile)}&format=txt" download="sachkhand-receipt-${appt.ref}.txt">📄 ${ctx.t('receipt_download_txt')}</a>
+      ${!isStandalone ? html`<a class="btn btn-outline" href="/${ctx.lang}/appointment/receipt?ref=${appt.ref}&mobile=${encodeURIComponent(appt.mobile)}">🔍 ${ctx.t('receipt_view')}</a>` : ''}
+    </div>
+  </div>`;
+}
+
+function receiptPage(ctx, appt) {
+  const main = html`
+    <div class="pagehead no-print"><div class="wrap">
+      <h1>${ctx.t('receipt_title')}</h1>
+      <p class="lead">${ctx.t('receipt_subtitle')} — ${appt.ref}</p>
+    </div></div>
+    <section class="block"><div class="wrap">
+      ${appointmentReceiptCard(ctx, appt, { isStandalone: true })}
+      <div class="no-print" style="margin-top:24px;text-align:center;display:flex;gap:12px;justify-content:center">
+        <a class="btn btn-outline" href="/${ctx.lang}/appointment/status">← ${ctx.t('nav_status')}</a>
+        <a class="btn btn-outline" href="/${ctx.lang}/">🏠 ${ctx.t('go_home')}</a>
+      </div>
+    </div></section>`;
+  return U.layout(ctx, { title: ctx.t('receipt_title'), path: 'appointment/receipt', main, noindex: true });
+}
+
+function successPage(ctx, flash, appt = null) {
   const [ref, type, flags] = flash;
+  const apptRow = appt || (ref ? get(ctx.db, 'SELECT * FROM appointments WHERE ref=?', ref) : null);
   const smsAvail = require('../services/sms-providers').getProvider() !== null;
   const main = html`<div class="pagehead"><div class="wrap"><h1>${ctx.t('ok_received')}</h1></div></div>
     <section class="block"><div class="wrap"><div class="alert alert-ok" role="status"><p>${ctx.t('ok_received_text')}</p>
       ${flags.includes('s') ? html`<p>${ctx.t('ok_slot_held')}</p>` : ''}${flags.includes('i') ? html`<p>${ctx.t('ok_inquiry')}</p>` : ''}</div>
     <p>${ctx.t('ok_ref')}:</p><p><span class="ref">${ref}</span></p><p>${ctx.t('ok_keep')}</p>
     ${flags.includes('m') ? html`<p>${smsAvail ? ctx.t('ok_sms_on') : ctx.t('ok_sms_off')}</p>` : ''}
-    <p><a class="btn btn-call" href="/${ctx.lang}/appointment/status">${ctx.t('nav_status')}</a></p>
-    <h2>${ctx.t('hospital_phones')}</h2>${U.phoneButtons(ctx)}${U.emergencyBanner(ctx)}</div></section>`;
+    ${apptRow ? appointmentReceiptCard(ctx, apptRow) : ''}
+    <div class="no-print" style="margin-top:20px">
+      <p><a class="btn btn-call" href="/${ctx.lang}/appointment/status">${ctx.t('nav_status')}</a></p>
+      <h2>${ctx.t('hospital_phones')}</h2>${U.phoneButtons(ctx)}${U.emergencyBanner(ctx)}
+    </div></div></section>`;
   return U.layout(ctx, { title: ctx.t('ok_received'), path: 'appointment/status', main, noindex: true });
 }
 
@@ -407,7 +544,11 @@ function statusPage(ctx, { values = {}, error = null, appt = null, changeDone = 
       ${appt.slot_start && ['Confirmed', 'Rescheduled'].includes(appt.status) ? html`<p><strong>${ctx.t('status_time')}:</strong> ${fmtDate(appt.slot_start.slice(0, 10))} ${appt.slot_start.slice(11)}</p>` : ''}
       ${appt.preferred_date ? html`<p><strong>${ctx.t('status_pref')}:</strong> ${fmtDate(appt.preferred_date)} (${ctx.t(rangeLabel[appt.preferred_range] || 'tr_any')})</p>` : ''}
       ${appt.status === 'Pending' ? html`<p class="alert alert-info">${ctx.t('ok_received_text')}</p>` : ''}
+      <div style="margin-top:12px;margin-bottom:12px">
+        <a class="btn btn-primary btn-sm" href="/${ctx.lang}/appointment/receipt?ref=${appt.ref}&mobile=${encodeURIComponent(values.mobile || appt.mobile)}">🧾 ${ctx.t('receipt_view')}</a>
+      </div>
       ${U.phoneButtons(ctx)}</div>
+      <div style="margin:20px 0">${appointmentReceiptCard(ctx, appt)}</div>
       ${final ? '' : open || changeDone ? html`<div class="alert alert-ok" role="status">${changeDone ? ctx.t('ok_change') : ctx.t('change_open')}</div>` : html`
       <h2>${ctx.t('change_title')}</h2>
       <form class="form" method="post" action="/${ctx.lang}/appointment/status/change" novalidate>${U.csrf(ctx)}
@@ -442,5 +583,5 @@ function serverError(ctx) {
   return U.layout(ctx, { title: ctx.t('err_500'), path: '', noindex: true, main: html`<section class="block"><div class="wrap"><h1>${ctx.t('err_500')}</h1><p>${ctx.t('err_500_text')}</p>${U.phoneButtons(ctx)}</div></section>` });
 }
 
-module.exports = { home, about, departmentsIndex, departmentPage, doctorsPage, contactPage, appointmentPage, diagnosticsPage, successPage, statusPage, policyPage, notFound, serverError,
+module.exports = { home, about, departmentsIndex, departmentPage, doctorsPage, contactPage, appointmentPage, diagnosticsPage, successPage, statusPage, receiptPage, appointmentReceiptCard, policyPage, notFound, serverError,
   departments, consultDepartments, publishedDoctors, diagnosticServices, servicesOf, content };
