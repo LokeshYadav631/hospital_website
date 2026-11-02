@@ -445,6 +445,7 @@ function appointmentReceiptCard(ctx, appt, { isStandalone = false } = {}) {
       <div class="receipt-badge-box">
         <span class="receipt-badge">${ctx.t('receipt_subtitle')}</span>
         <div class="receipt-ref-code">${appt.ref}</div>
+        <button type="button" class="btn btn-sm btn-outline no-print" data-copy-ref="${appt.ref}" style="margin:4px 0;padding:2px 8px;font-size:0.75rem">📋 ${ctx.bi('Copy', 'कॉपी')}</button>
         <div class="receipt-date"><small>${ctx.t('receipt_date')}: ${clock.todayIST()}</small></div>
       </div>
     </div>
@@ -489,6 +490,7 @@ function appointmentReceiptCard(ctx, appt, { isStandalone = false } = {}) {
 
     <div class="receipt-actions no-print">
       <button class="btn btn-primary" type="button" data-print>🖨️ ${ctx.t('receipt_print')}</button>
+      <button class="btn btn-outline" type="button" data-copy-ref="${appt.ref}">📋 ${ctx.bi('Copy Reference', 'रेफरेंस कॉपी करें')}</button>
       <a class="btn btn-call" href="/${ctx.lang}/appointment/receipt/download?ref=${appt.ref}&mobile=${encodeURIComponent(appt.mobile)}" download="sachkhand-receipt-${appt.ref}.html">⬇️ ${ctx.t('receipt_download')}</a>
       <a class="btn btn-outline" href="/${ctx.lang}/appointment/receipt/download?ref=${appt.ref}&mobile=${encodeURIComponent(appt.mobile)}&format=txt" download="sachkhand-receipt-${appt.ref}.txt">📄 ${ctx.t('receipt_download_txt')}</a>
       ${!isStandalone ? html`<a class="btn btn-outline" href="/${ctx.lang}/appointment/receipt?ref=${appt.ref}&mobile=${encodeURIComponent(appt.mobile)}">🔍 ${ctx.t('receipt_view')}</a>` : ''}

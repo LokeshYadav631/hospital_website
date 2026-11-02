@@ -87,17 +87,6 @@ ${noindex ? raw('<meta name="robots" content="noindex">') : ''}
 ${jsonld ? html`<script type="application/ld+json">${jsonForScript(jsonld)}</script>` : ''}
 </head><body class="lang-${lang}">
 <a class="skip" href="#main">${ctx.t('skip')}</a>
-${ctx.user ? html`
-<div class="admin-quickbar no-print">
-  <div class="wrap admin-quickbar-in">
-    <span class="aq-title">👑 <strong>Admin Mode Active:</strong> ${esc(ctx.user.name)}</span>
-    <div class="aq-actions">
-      <a href="/admin" class="aq-btn">⚙️ Admin Dashboard</a>
-      <a href="/admin/settings" class="aq-btn">🏥 Settings</a>
-      <form method="post" action="/admin/logout" class="inline">${csrf(ctx)}<button type="submit" class="aq-btn aq-logout">Sign out</button></form>
-    </div>
-  </div>
-</div>` : ''}
 <div class="topbar"><div class="wrap topbar-in">
   <span>${ctx.t('hospital_phones')}: <a href="${telHref(s.phone1)}">${s.phone1}</a> · <a href="${telHref(s.phone2)}">${s.phone2}</a></span>
   <div class="topbar-right">
@@ -119,9 +108,6 @@ ${ctx.user ? html`
         ${s.facebook_url ? html`<a href="${s.facebook_url}" target="_blank" rel="noopener noreferrer" class="btn btn-call btn-sm social-mob-btn">📘 Facebook</a>` : ''}
         ${s.instagram_url ? html`<a href="${s.instagram_url}" target="_blank" rel="noopener noreferrer" class="btn btn-call btn-sm social-mob-btn">📸 Instagram</a>` : ''}
       </div>` : ''}
-      <div class="mobile-menu-admin">
-        <a href="/admin" class="nav-admin-link">🔐 ${ctx.bi('Staff / Admin Portal', 'स्टाफ / एडमिन पोर्टल')} →</a>
-      </div>
     </div>
   </nav>
   <div class="header-trust"><a href="/${lang}/about" title="${s['trust_name_' + lang]}"><img src="/static/img/trust-logo.png" alt="${s['trust_name_' + lang]}" width="50" height="50" style="object-fit:contain" class="trust-logo"></a></div>
@@ -164,7 +150,6 @@ ${ctx.user ? html`
     <p><a href="/${lang}/privacy">${ctx.t('footer_privacy')}</a></p>
     <p><a href="/${lang}/terms">${ctx.t('footer_terms')}</a></p>
     <p><a href="/${lang}/departments">${ctx.t('nav_departments')}</a></p>
-    <p style="margin-top:12px"><a href="/admin" class="footer-admin-link" style="opacity:0.85;display:inline-flex;align-items:center;gap:4px">🔐 ${ctx.bi('Staff & Admin Portal', 'स्टाफ एवं एडमिन पोर्टल')}</a></p>
   </div>
 </div><div class="wrap copy">© ${new Date().getFullYear()} ${name}. ${ctx.t('footer_rights')}</div></footer>
 </body></html>`;

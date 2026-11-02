@@ -36,7 +36,7 @@ test('permanent social accounts: exact official Instagram and Facebook links app
   assert.ok(hiPage.text.includes(OFFICIAL_IG.replace(/&/g, '&amp;')) || hiPage.text.includes(OFFICIAL_IG));
 });
 
-test('mobile phone UI: mobile bottom bar, mobile menu extras, and staff portal links', async () => {
+test('mobile phone UI: mobile bottom bar and mobile menu extras (with no admin login links in user UI)', async () => {
   const page = await c.get('/en/');
   assert.equal(page.status, 200);
 
@@ -48,17 +48,17 @@ test('mobile phone UI: mobile bottom bar, mobile menu extras, and staff portal l
   // Mobile Menu Extras inside #site-nav
   assert.ok(page.text.includes('site-nav-mobile-extras'), 'mobile menu extras container must be present');
   assert.ok(page.text.includes('mobile-menu-social'), 'social buttons inside mobile menu drawer');
-  assert.ok(page.text.includes('mobile-menu-admin'), 'admin portal quick link in mobile menu');
 
-  // Footer staff portal link
-  assert.ok(page.text.includes('footer-admin-link'), 'staff & admin login link in footer');
-  assert.ok(page.text.includes('/admin'));
+  // Verification: No admin login links anywhere in the user UI
+  assert.ok(!page.text.includes('footer-admin-link'), 'no admin login link in footer');
+  assert.ok(!page.text.includes('mobile-menu-admin'), 'no admin login link in mobile menu');
+  assert.ok(!page.text.includes('href="/admin"'), 'user UI must not expose any link to /admin');
 });
 
-test('admin and user interface linkage: admin bar on public site & view public website in admin', async () => {
-  // 1. Unauthenticated user does not see admin quickbar
+test('admin and user interface linkage: view public website in admin & settings sync to user site', async () => {
+  // 1. User site does not expose any admin links
   const anon = await c.get('/en/');
-  assert.ok(!anon.text.includes('admin-quickbar'), 'anonymous user must not see admin bar');
+  assert.ok(!anon.text.includes('/admin'), 'user site must have zero admin links');
 
   // 2. Log in as super admin using helper
   const adminClient = new H.Client(app.base);
@@ -72,16 +72,7 @@ test('admin and user interface linkage: admin bar on public site & view public w
   assert.ok(adminDash.text.includes('View Public Website'), 'admin sidebar must contain View Public Website link');
   assert.ok(adminDash.text.includes('href="/en/"'));
 
-  // 4. Authenticated admin visiting public website sees the Admin Mode quickbar
-  const adminViewPub = await adminClient.get('/en/');
-  assert.equal(adminViewPub.status, 200);
-  assert.ok(adminViewPub.text.includes('admin-quickbar'), 'logged-in admin must see admin quickbar on public site');
-  assert.ok(adminViewPub.text.includes('Admin Mode Active:'));
-  assert.ok(adminViewPub.text.includes('Dr. Head Admin'));
-  assert.ok(adminViewPub.text.includes('href="/admin"'));
-  assert.ok(adminViewPub.text.includes('href="/admin/settings"'));
-
-  // 5. Changing hospital settings in admin updates public site immediately and permanently
+  // 4. Changing hospital settings in admin updates public site immediately and permanently
   const base = {
     phone1: '01494-246333',
     phone2: '09799107439',

@@ -95,14 +95,22 @@ function buildCtx(db, req, res) {
   return ctx;
 }
 
+const staticCache = new Map();
 function serveStatic(ctx, pathname) {
   const rel = pathname.replace(/^\/static\//, '');
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
   if (!file.startsWith(PUBLIC_DIR + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) return false;
   const ext = path.extname(file).toLowerCase();
   if (!MIME[ext]) return false;
-  ctx.res.writeHead(200, { ...SECURITY_HEADERS, 'Content-Type': MIME[ext], 'Cache-Control': 'public, max-age=3600' });
-  ctx.res.end(fs.readFileSync(file));
+  let cached = staticCache.get(file);
+  const now = Date.now();
+  if (!cached || (process.env.NODE_ENV !== 'production' && now - cached.ts > 5000)) {
+    const stat = fs.statSync(file);
+    cached = { buf: fs.readFileSync(file), mtime: stat.mtimeMs, ts: now };
+    staticCache.set(file, cached);
+  }
+  ctx.res.writeHead(200, { ...SECURITY_HEADERS, 'Content-Type': MIME[ext], 'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800' });
+  ctx.res.end(cached.buf);
   return true;
 }
 
