@@ -24,10 +24,13 @@ function adminLayout(ctx, { title, main, active }) {
 <link rel="icon" href="/static/img/logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="/static/css/style.css?v=1"><script src="/static/js/app.js" defer></script></head><body class="lang-en admin">
-<div class="admin-shell"><aside class="admin-side no-print"><h2>SACHKHAND HOSPITAL<br><small>Admin</small></h2>
+<div class="admin-shell"><aside class="admin-side no-print"><h2>SACHKHAND HOSPITAL<br><small>Admin Control Panel</small></h2>
+<div style="margin:12px 0 16px">
+  <a href="/en/" target="_blank" rel="noopener noreferrer" class="btn btn-call btn-sm" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:700;font-size:0.84rem;padding:8px 10px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">🌐 View Public Website ↗</a>
+</div>
 <nav aria-label="Admin">${NAV.filter(([, , p]) => !p || can(ctx.user, p)).map(([href, label]) => html`<a href="${href}" ${active === href ? raw('aria-current="page"') : ''}>${label}</a>`)}</nav>
-<form method="post" action="/admin/logout" style="margin-top:20px">${U.csrf(ctx)}<button class="btn btn-outline btn-sm" type="submit">Sign out</button></form>
-<p style="font-size:.8rem;margin-top:14px">${ctx.user.name}<br>${ROLE_LABEL[ctx.user.role]}</p></aside>
+<form method="post" action="/admin/logout" style="margin-top:20px">${U.csrf(ctx)}<button class="btn btn-outline btn-sm" type="submit" style="width:100%">Sign out</button></form>
+<p style="font-size:.8rem;margin-top:14px;color:#cbd5e1">${ctx.user.name}<br><span style="color:#94a3b8">${ROLE_LABEL[ctx.user.role]}</span></p></aside>
 <main class="admin-main" id="main" tabindex="-1"><h1>${title}</h1>${flashBox(ctx)}${main}</main></div></body></html>`;
 }
 

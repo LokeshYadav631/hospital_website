@@ -243,7 +243,7 @@ module.exports = function register(router, { G, notFoundAdmin }) {
     if (errs.length) return failTo(ctx, '/admin/settings', errs.join(' '));
     tx(ctx.db, () => {
       for (const k of ['phone1', 'phone2', 'address_en', 'address_hi', 'hospital_name_en', 'hospital_name_hi', 'tagline_en', 'tagline_hi', 'trust_name_en', 'trust_name_hi', 'email', 'hours_en', 'hours_hi', 'emergency_note_en', 'emergency_note_hi', 'map_url', 'hero_image_url', 'facebook_url', 'instagram_url'])
-        if (b[k] !== undefined) setSetting(ctx.db, k, V.str(b[k], 300).trim());
+        if (b[k] !== undefined) setSetting(ctx.db, k, V.str(b[k], 1000).trim());
       setSetting(ctx.db, 'emergency_status', ['available', 'unavailable'].includes(b.emergency_status) ? b.emergency_status : 'unconfirmed');
       for (const k of ['hours_confirmed', 'map_verified', 'sms_reminders_enabled']) setSetting(ctx.db, k, flag(b, k) ? '1' : '0');
     });

@@ -82,41 +82,90 @@ ${noindex ? raw('<meta name="robots" content="noindex">') : ''}
 <link rel="icon" href="/static/img/logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap">
-<link rel="stylesheet" href="/static/css/style.css?v=1">
+<link rel="stylesheet" href="/static/css/style.css?v=2">
 <script src="/static/js/app.js" defer></script>
 ${jsonld ? html`<script type="application/ld+json">${jsonForScript(jsonld)}</script>` : ''}
 </head><body class="lang-${lang}">
 <a class="skip" href="#main">${ctx.t('skip')}</a>
+${ctx.user ? html`
+<div class="admin-quickbar no-print">
+  <div class="wrap admin-quickbar-in">
+    <span class="aq-title">👑 <strong>Admin Mode Active:</strong> ${esc(ctx.user.name)}</span>
+    <div class="aq-actions">
+      <a href="/admin" class="aq-btn">⚙️ Admin Dashboard</a>
+      <a href="/admin/settings" class="aq-btn">🏥 Settings</a>
+      <form method="post" action="/admin/logout" class="inline">${csrf(ctx)}<button type="submit" class="aq-btn aq-logout">Sign out</button></form>
+    </div>
+  </div>
+</div>` : ''}
 <div class="topbar"><div class="wrap topbar-in">
   <span>${ctx.t('hospital_phones')}: <a href="${telHref(s.phone1)}">${s.phone1}</a> · <a href="${telHref(s.phone2)}">${s.phone2}</a></span>
   <div class="topbar-right">
-    ${s.facebook_url ? html`<a href="${esc(s.facebook_url)}" target="_blank" rel="noopener noreferrer" class="social-link" title="Facebook" aria-label="Facebook"><span>📘</span> Facebook</a>` : ''}
-    ${s.instagram_url ? html`<a href="${esc(s.instagram_url)}" target="_blank" rel="noopener noreferrer" class="social-link" title="Instagram" aria-label="Instagram"><span>📸</span> Instagram</a>` : ''}
+    ${s.facebook_url ? html`<a href="${s.facebook_url}" target="_blank" rel="noopener noreferrer" class="social-link fb-link" title="Facebook" aria-label="Facebook"><span>📘</span> Facebook</a>` : ''}
+    ${s.instagram_url ? html`<a href="${s.instagram_url}" target="_blank" rel="noopener noreferrer" class="social-link ig-link" title="Instagram" aria-label="Instagram"><span>📸</span> Instagram</a>` : ''}
     <a class="langswitch" lang="${other(lang)}" hreflang="${other(lang)}" href="/${other(lang)}/${path || ''}" data-lang="${other(lang)}">${ctx.t('lang_switch')}</a>
   </div>
 </div></div>
 <header class="site-header"><div class="wrap header-in">
   <a class="brand" href="/${lang}/"><img src="/static/img/hospital-logo.jpg" alt="${name}" width="52" height="52" class="brand-logo" style="border-radius:50%;object-fit:cover;box-shadow:0 1px 4px rgba(0,0,0,0.15)"><span class="brand-text"><strong>${name}</strong><small>${s['tagline_' + lang]}</small></span></a>
-  <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-nav">${ctx.t('menu')}</button>
+  <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-nav"><span class="menu-icon">☰</span> <span class="menu-label">${ctx.t('menu')}</span></button>
   <nav id="site-nav" class="site-nav" aria-label="Main">
     <ul>${nav.map(([p, k]) => html`<li><a href="/${lang}/${p}"${raw(here(p))}>${ctx.t(k)}</a></li>`)}
     <li><a href="/${lang}/appointment/status"${raw(here('appointment'))}>${ctx.t('nav_status')}</a></li></ul>
-    <a class="btn btn-primary" href="/${lang}/appointment">${ctx.t('book')}</a>
+    <div class="site-nav-mobile-extras">
+      <a class="btn btn-primary btn-block nav-book-cta" href="/${lang}/appointment">📅 ${ctx.t('book')}</a>
+      ${s.facebook_url || s.instagram_url ? html`
+      <div class="mobile-menu-social">
+        ${s.facebook_url ? html`<a href="${s.facebook_url}" target="_blank" rel="noopener noreferrer" class="btn btn-call btn-sm social-mob-btn">📘 Facebook</a>` : ''}
+        ${s.instagram_url ? html`<a href="${s.instagram_url}" target="_blank" rel="noopener noreferrer" class="btn btn-call btn-sm social-mob-btn">📸 Instagram</a>` : ''}
+      </div>` : ''}
+      <div class="mobile-menu-admin">
+        <a href="/admin" class="nav-admin-link">🔐 ${ctx.bi('Staff / Admin Portal', 'स्टाफ / एडमिन पोर्टल')} →</a>
+      </div>
+    </div>
   </nav>
   <div class="header-trust"><a href="/${lang}/about" title="${s['trust_name_' + lang]}"><img src="/static/img/trust-logo.png" alt="${s['trust_name_' + lang]}" width="50" height="50" style="object-fit:contain" class="trust-logo"></a></div>
 </div></header>
 <main id="main" tabindex="-1">${main}</main>
+<nav class="mobile-bottom-bar no-print" aria-label="Quick Navigation">
+  <a href="${telHref(s.phone1)}" class="mbi-item" title="${ctx.t('call')}">
+    <span class="mbi-icon" aria-hidden="true">📞</span>
+    <span class="mbi-text">${ctx.t('call_now')}</span>
+  </a>
+  <a href="/${lang}/appointment" class="mbi-item mbi-highlight" title="${ctx.t('book')}">
+    <span class="mbi-icon" aria-hidden="true">📅</span>
+    <span class="mbi-text">${ctx.t('book')}</span>
+  </a>
+  <a href="/${lang}/appointment/status" class="mbi-item" title="${ctx.t('nav_status')}">
+    <span class="mbi-icon" aria-hidden="true">🧾</span>
+    <span class="mbi-text">${ctx.t('nav_status')}</span>
+  </a>
+  ${s.instagram_url ? html`
+  <a href="${s.instagram_url}" target="_blank" rel="noopener noreferrer" class="mbi-item" title="Instagram">
+    <span class="mbi-icon" aria-hidden="true">📸</span>
+    <span class="mbi-text">Instagram</span>
+  </a>` : (s.facebook_url ? html`
+  <a href="${s.facebook_url}" target="_blank" rel="noopener noreferrer" class="mbi-item" title="Facebook">
+    <span class="mbi-icon" aria-hidden="true">📘</span>
+    <span class="mbi-text">Facebook</span>
+  </a>` : '')}
+</nav>
 <footer class="site-footer"><div class="wrap footer-in">
   <div><strong>${name}</strong><p>${ctx.t('footer_managed')}: ${s['trust_name_' + lang]}</p><p>${s['address_' + lang]}</p></div>
   <div>
     <p>☎ <a href="${telHref(s.phone1)}">${s.phone1}</a></p>
     <p>☎ <a href="${telHref(s.phone2)}">${s.phone2}</a></p>
     ${s.facebook_url || s.instagram_url ? html`<div class="footer-social" style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap">
-      ${s.facebook_url ? html`<a href="${esc(s.facebook_url)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.12);padding:4px 10px;border-radius:6px;text-decoration:none;font-size:0.9rem">📘 Facebook</a>` : ''}
-      ${s.instagram_url ? html`<a href="${esc(s.instagram_url)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.12);padding:4px 10px;border-radius:6px;text-decoration:none;font-size:0.9rem">📸 Instagram</a>` : ''}
+      ${s.facebook_url ? html`<a href="${s.facebook_url}" target="_blank" rel="noopener noreferrer" class="footer-social-btn fb-footer-btn" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.14);padding:6px 12px;border-radius:6px;text-decoration:none;font-size:0.9rem;color:#fff;font-weight:600">📘 Facebook</a>` : ''}
+      ${s.instagram_url ? html`<a href="${s.instagram_url}" target="_blank" rel="noopener noreferrer" class="footer-social-btn ig-footer-btn" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.14);padding:6px 12px;border-radius:6px;text-decoration:none;font-size:0.9rem;color:#fff;font-weight:600">📸 Instagram</a>` : ''}
     </div>` : ''}
   </div>
-  <div><p><a href="/${lang}/privacy">${ctx.t('footer_privacy')}</a></p><p><a href="/${lang}/terms">${ctx.t('footer_terms')}</a></p><p><a href="/${lang}/departments">${ctx.t('nav_departments')}</a></p></div>
+  <div>
+    <p><a href="/${lang}/privacy">${ctx.t('footer_privacy')}</a></p>
+    <p><a href="/${lang}/terms">${ctx.t('footer_terms')}</a></p>
+    <p><a href="/${lang}/departments">${ctx.t('nav_departments')}</a></p>
+    <p style="margin-top:12px"><a href="/admin" class="footer-admin-link" style="opacity:0.85;display:inline-flex;align-items:center;gap:4px">🔐 ${ctx.bi('Staff & Admin Portal', 'स्टाफ एवं एडमिन पोर्टल')}</a></p>
+  </div>
 </div><div class="wrap copy">© ${new Date().getFullYear()} ${name}. ${ctx.t('footer_rights')}</div></footer>
 </body></html>`;
 }

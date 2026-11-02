@@ -46,7 +46,7 @@ function createApp(db) {
           return ctx.send(403, t(lang, 'e_csrf'), 'text/plain; charset=utf-8');
         }
       }
-      if (pathname.startsWith('/admin')) ctx.user = sec.getSession(db, ctx.cookies.sid);
+      if (ctx.cookies.sid) ctx.user = sec.getSession(db, ctx.cookies.sid);
       await m.route.handler(ctx);
     } catch (e) {
       if (e && e.status === 413) { try { res.writeHead(413); res.end('Request too large'); } catch { /* ignore */ } return; }

@@ -134,8 +134,8 @@ const settings = {
   emergency_note_en: '', emergency_note_hi: '',
   map_verified: '0', map_url: '',
   hero_image_url: '',
-  facebook_url: '',
-  instagram_url: '',
+  facebook_url: 'https://www.facebook.com/profile.php?id=100054475659030',
+  instagram_url: 'https://www.instagram.com/sachkhandhospital?utm_source=ig_web_button_share_sheet&psln=ZDNlZDc0MzIxNw==',
   sms_reminders_enabled: '0',
 };
 

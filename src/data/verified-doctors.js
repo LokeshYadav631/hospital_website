@@ -389,18 +389,11 @@ function seedVerifiedDoctors(db) {
       );
       d = { id: Number(r.lastInsertRowid) };
     } else {
-      db.prepare(`
-        UPDATE doctors SET name_en=?, name_hi=?, photo_url=?, qualifications_en=?, qualifications_hi=?,
-          specialization_en=?, specialization_hi=?, experience_years=?, languages=?, sort=?, verified=1, published=1, active=1
-        WHERE id=?
-      `).run(
-        doc.name_en, doc.name_hi, doc.photo_url,
-        doc.qualifications_en, doc.qualifications_hi,
-        doc.specialization_en, doc.specialization_hi,
-        doc.experience_years, doc.languages,
-        sortOrder,
-        d.id
-      );
+      // Doctor exists in database: preserve any admin customizations (specialization, active, published, fee, sort)
+      // Only backfill photo if doctor has none
+      if (!d.photo_url && doc.photo_url) {
+        db.prepare('UPDATE doctors SET photo_url=? WHERE id=?').run(doc.photo_url, d.id);
+      }
     }
 
     // Link departments
@@ -420,10 +413,10 @@ function seedVerifiedDoctors(db) {
     }
   }
 
-  // Update hospital hero image and logos in hospital_settings
-  db.prepare("INSERT OR REPLACE INTO hospital_settings(key, value) VALUES ('hero_image_url', '/static/img/hospital-building.jpg')").run();
+  // Update hospital hero image in hospital_settings if not already set
+  db.prepare("INSERT OR IGNORE INTO hospital_settings(key, value) VALUES ('hero_image_url', '/static/img/hospital-building.jpg')").run();
 
-  // In live production/dev mode (outside test harness), update verified hospital operational details
+  // In live production/dev mode (outside test harness), seed verified operational defaults without overwriting admin changes
   if (process.env.NODE_ENV !== 'test') {
     const verifiedSettings = [
       ['hours_confirmed', '1'],
@@ -434,12 +427,20 @@ function seedVerifiedDoctors(db) {
       ['emergency_note_hi', 'आपातकालीन सहायता, गहन चिकित्सा (ICU) और एम्बुलेंस सुविधा उपलब्ध।'],
       ['map_verified', '1'],
       ['map_url', 'https://maps.google.com/?q=Sachkhand+Hospital+Neemrana+Mundawar'],
+      ['facebook_url', 'https://www.facebook.com/profile.php?id=100054475659030'],
+      ['instagram_url', 'https://www.instagram.com/sachkhandhospital?utm_source=ig_web_button_share_sheet&psln=ZDNlZDc0MzIxNw=='],
     ];
     for (const [k, v] of verifiedSettings) {
-      db.prepare("INSERT INTO hospital_settings(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(k, v);
+      const row = db.prepare("SELECT value FROM hospital_settings WHERE key=?").get(k);
+      if (!row) {
+        db.prepare("INSERT INTO hospital_settings(key, value) VALUES (?, ?)").run(k, v);
+      } else if (!row.value || (k === 'facebook_url' && row.value.includes('facebook.com/sachkhandhospital')) || (k === 'instagram_url' && row.value === 'https://instagram.com/sachkhandhospital')) {
+        // Upgrade placeholder to verified official account
+        db.prepare("UPDATE hospital_settings SET value=? WHERE key=?").run(v, k);
+      }
     }
 
-    // Refresh content entries in case already seeded earlier
+    // Insert content entries only if missing, preserving any edits made by the administrator
     const contentUpdates = [
       ['home_intro', 'SACHKHAND HOSPITAL in Mundawar (serving Mundawar, Neemrana, Behror and the Alwar region) is managed by Sachkhand Charitable Trust. Featuring 90-bed capacity, 15 ICU beds, modern operation theaters, digital diagnostics, and empaneled under Ayushman Bharat (PM-JAY) and RGHS.',
         'मुंडावर (राजस्थान) स्थित सचखंड हॉस्पिटल (मुंडावर, नीमराना, बहरोड़ एवं अलवर क्षेत्र) का संचालन सचखंड चैरिटेबल ट्रस्ट द्वारा किया जाता है। यहाँ 90 बिस्तरों की सुविधा, 15 आईसीयू बेड, आधुनिक ऑपरेशन थिएटर, डिजिटल जाँच तथा आयुष्मान भारत (PM-JAY) व आरजीएचएस (RGHS) योजनाएँ उपलब्ध हैं।'],
@@ -451,7 +452,10 @@ function seedVerifiedDoctors(db) {
         'अस्पताल की सुविधाओं में 90 इनडोर बेड, 15 बिस्तरों की समर्पित गहन चिकित्सा इकाई (ICU), आधुनिक मॉड्यूलर ऑपरेशन थिएटर, इन-हाउस सीटी स्कैन, डिजिटल एक्स-रे, अल्ट्रासाउंड, सुसज्जित पैथोलॉजी लैब और इन-हाउस फार्मेसी शामिल हैं।'],
     ];
     for (const [key, en, hi] of contentUpdates) {
-      db.prepare("INSERT INTO website_content(key, label, en, hi) VALUES (?, ?, ?, ?) ON CONFLICT(key) DO UPDATE SET en=excluded.en, hi=excluded.hi").run(key, key, en, hi);
+      const row = db.prepare("SELECT en, hi FROM website_content WHERE key=?").get(key);
+      if (!row) {
+        db.prepare("INSERT INTO website_content(key, label, en, hi) VALUES (?, ?, ?, ?)").run(key, key, en, hi);
+      }
     }
   }
 }

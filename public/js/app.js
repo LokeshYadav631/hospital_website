@@ -4,18 +4,26 @@
   // Mobile menu with outside-click & escape key dismissal
   var btn = document.querySelector('.menu-btn'), nav = document.getElementById('site-nav');
   if (btn && nav) {
+    var icon = btn.querySelector('.menu-icon');
     var toggleMenu = function (state) {
       var shouldOpen = typeof state === 'boolean' ? state : !nav.classList.contains('open');
       if (shouldOpen) {
         nav.classList.add('open');
+        if (icon) icon.textContent = '✕';
       } else {
         nav.classList.remove('open');
+        if (icon) icon.textContent = '☰';
       }
       btn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
     };
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
       toggleMenu();
+    });
+    nav.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        if (window.innerWidth <= 960) toggleMenu(false);
+      });
     });
     document.addEventListener('click', function (e) {
       if (nav.classList.contains('open') && !nav.contains(e.target) && e.target !== btn) {
